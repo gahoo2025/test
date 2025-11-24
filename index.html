@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>シンプル電卓</title>
+  <style>
+    :root {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: #1f2937;
+      background: #f9fafb;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    .calculator {
+      background: #ffffff;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+      border-radius: 16px;
+      padding: 18px;
+      width: 320px;
+    }
+
+    .display {
+      background: #0f172a;
+      color: #e5e7eb;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: right;
+      font-size: 1.8rem;
+      letter-spacing: 1px;
+      min-height: 60px;
+      box-sizing: border-box;
+      overflow: hidden;
+      word-break: break-all;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    button {
+      border: none;
+      padding: 14px;
+      font-size: 1.2rem;
+      border-radius: 12px;
+      cursor: pointer;
+      background: #e5e7eb;
+      color: #0f172a;
+      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.2s ease;
+    }
+
+    button:active {
+      transform: translateY(1px);
+    }
+
+    button:hover {
+      background: #d4d7dd;
+    }
+
+    .operator {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .operator:hover {
+      background: #fde68a;
+    }
+
+    .equals {
+      background: #2563eb;
+      color: white;
+    }
+
+    .equals:hover {
+      background: #1d4ed8;
+    }
+
+    .clear {
+      background: #fecdd3;
+      color: #9f1239;
+    }
+
+    .clear:hover {
+      background: #fda4af;
+    }
+  </style>
+</head>
+<body>
+  <main class="calculator" aria-label="シンプル電卓">
+    <div id="display" class="display" aria-live="polite">0</div>
+    <div class="buttons" aria-label="電卓のボタン">
+      <button data-value="7">7</button>
+      <button data-value="8">8</button>
+      <button data-value="9">9</button>
+      <button class="operator" data-value="/">/</button>
+
+      <button data-value="4">4</button>
+      <button data-value="5">5</button>
+      <button data-value="6">6</button>
+      <button class="operator" data-value="*">*</button>
+
+      <button data-value="1">1</button>
+      <button data-value="2">2</button>
+      <button data-value="3">3</button>
+      <button class="operator" data-value="-">-</button>
+
+      <button class="clear" data-action="clear">C</button>
+      <button data-value="0">0</button>
+      <button class="equals" data-action="equals">=</button>
+      <button class="operator" data-value="+">+</button>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      const display = document.getElementById('display');
+      const buttons = document.querySelectorAll('.buttons button');
+      let expression = '';
+
+      const updateDisplay = (text) => {
+        display.textContent = text || '0';
+      };
+
+      const appendValue = (value) => {
+        expression += value;
+        updateDisplay(expression);
+      };
+
+      const calculate = () => {
+        try {
+          const result = expression ? Function(`"use strict"; return (${expression})`)() : 0;
+          expression = String(result);
+          updateDisplay(expression);
+        } catch (err) {
+          expression = '';
+          updateDisplay('エラー');
+        }
+      };
+
+      const clear = () => {
+        expression = '';
+        updateDisplay('0');
+      };
+
+      buttons.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const action = btn.dataset.action;
+          const value = btn.dataset.value;
+
+          if (action === 'equals') {
+            calculate();
+          } else if (action === 'clear') {
+            clear();
+          } else if (value) {
+            appendValue(value);
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
