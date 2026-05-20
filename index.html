@@ -3,169 +3,312 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>シンプル電卓</title>
+  <title>まなびチャレンジ</title>
   <style>
     :root {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      color: #1f2937;
-      background: #f9fafb;
+      color-scheme: light;
+      font-family: 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Meiryo', sans-serif;
+      --bg: #f3f4f6;
+      --card: #ffffff;
+      --ink: #1f2937;
+      --accent: #2563eb;
+      --good: #16a34a;
+      --warn: #ea580c;
+      --bad: #dc2626;
     }
-
-    body {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-    }
-
-    .calculator {
-      background: #ffffff;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); }
+    .app { max-width: 980px; margin: 0 auto; padding: 18px; }
+    .panel {
+      background: var(--card);
       border-radius: 16px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
       padding: 18px;
-      width: 320px;
+      margin-bottom: 14px;
     }
-
-    .display {
-      background: #0f172a;
-      color: #e5e7eb;
-      border-radius: 12px;
-      padding: 16px;
-      text-align: right;
-      font-size: 1.8rem;
-      letter-spacing: 1px;
-      min-height: 60px;
-      box-sizing: border-box;
-      overflow: hidden;
-      word-break: break-all;
+    .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+    h1, h2, h3 { margin: 0 0 10px; }
+    .pill { background: #e0e7ff; color: #1d4ed8; border-radius: 999px; padding: 6px 10px; font-size: 0.9rem; }
+    button, select, input {
+      font: inherit;
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+      padding: 10px 12px;
+      background: white;
     }
-
-    .buttons {
+    button { cursor: pointer; }
+    button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+    button.good { background: var(--good); color: white; border-color: var(--good); }
+    button.warn { background: #fed7aa; border-color: #fdba74; color: #9a3412; }
+    .feedback {
+      margin-top: 10px; padding: 10px; border-radius: 10px; min-height: 44px; font-weight: 600;
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+    .feedback.ok { background: #dcfce7; color: #166534; transform: scale(1.01); }
+    .feedback.ng { background: #ffedd5; color: #9a3412; }
+    .feedback.idle { background: #e5e7eb; color: #374151; }
+    .problem { font-size: 1.3rem; margin: 12px 0; }
+    .stats-grid {
       display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-top: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
     }
-
-    button {
-      border: none;
-      padding: 14px;
-      font-size: 1.2rem;
-      border-radius: 12px;
-      cursor: pointer;
-      background: #e5e7eb;
-      color: #0f172a;
-      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.2s ease;
-    }
-
-    button:active {
-      transform: translateY(1px);
-    }
-
-    button:hover {
-      background: #d4d7dd;
-    }
-
-    .operator {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .operator:hover {
-      background: #fde68a;
-    }
-
-    .equals {
-      background: #2563eb;
-      color: white;
-    }
-
-    .equals:hover {
-      background: #1d4ed8;
-    }
-
-    .clear {
-      background: #fecdd3;
-      color: #9f1239;
-    }
-
-    .clear:hover {
-      background: #fda4af;
-    }
+    .stat { background: #f9fafb; border-radius: 12px; padding: 10px; }
+    .history { max-height: 260px; overflow: auto; border: 1px solid #e5e7eb; border-radius: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { border-bottom: 1px solid #e5e7eb; padding: 8px; text-align: left; }
+    .lock { display: none; }
+    .lock.show { display: block; }
+    .muted { color: #6b7280; font-size: 0.92rem; }
   </style>
 </head>
 <body>
-  <main class="calculator" aria-label="シンプル電卓">
-    <div id="display" class="display" aria-live="polite">0</div>
-    <div class="buttons" aria-label="電卓のボタン">
-      <button data-value="7">7</button>
-      <button data-value="8">8</button>
-      <button data-value="9">9</button>
-      <button class="operator" data-value="/">/</button>
-
-      <button data-value="4">4</button>
-      <button data-value="5">5</button>
-      <button data-value="6">6</button>
-      <button class="operator" data-value="*">*</button>
-
-      <button data-value="1">1</button>
-      <button data-value="2">2</button>
-      <button data-value="3">3</button>
-      <button class="operator" data-value="-">-</button>
-
-      <button class="clear" data-action="clear">C</button>
-      <button data-value="0">0</button>
-      <button class="equals" data-action="equals">=</button>
-      <button class="operator" data-value="+">+</button>
+  <div class="app">
+    <div class="panel">
+      <h1>まなびチャレンジ</h1>
+      <div class="row">
+        <span class="pill" id="skillPill">能力値: 50</span>
+        <span class="pill" id="streakPill">連続正解: 0</span>
+        <span class="pill" id="starPill">スター: 0</span>
+      </div>
     </div>
-  </main>
+
+    <div class="panel">
+      <h2>子どもモード</h2>
+      <div class="row">
+        <label>教科
+          <select id="subject">
+            <option value="math">算数</option>
+            <option value="jp">国語</option>
+          </select>
+        </label>
+        <button id="newProblem" class="primary">問題をつくる</button>
+      </div>
+      <div class="problem" id="problemText">「問題をつくる」を押して始めよう</div>
+      <div class="row">
+        <input id="answerInput" placeholder="こたえを入力" />
+        <button id="submitAnswer" class="good">こたえる</button>
+        <button id="hintBtn" class="warn">ヒント</button>
+      </div>
+      <div class="feedback idle" id="feedback">ここに結果が表示されます。</div>
+      <p class="muted" id="hintText"></p>
+    </div>
+
+    <div class="panel">
+      <h2>保護者モード</h2>
+      <div class="row">
+        <input id="pinInput" type="password" maxlength="4" placeholder="4桁PIN" />
+        <button id="unlockBtn">ロック解除</button>
+      </div>
+      <div class="lock" id="parentView">
+        <div class="stats-grid" id="summaryGrid"></div>
+        <h3>回答履歴（新しい順）</h3>
+        <div class="history">
+          <table>
+            <thead>
+              <tr><th>日時</th><th>教科</th><th>問題</th><th>正誤</th><th>時間</th><th>ヒント</th></tr>
+            </thead>
+            <tbody id="historyBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
-    (function () {
-      const display = document.getElementById('display');
-      const buttons = document.querySelectorAll('.buttons button');
-      let expression = '';
+    (() => {
+      const storageKey = 'manabi-app-v1';
+      const dailyTarget = 10;
+      const pinCode = '1234';
+      const state = loadState();
 
-      const updateDisplay = (text) => {
-        display.textContent = text || '0';
+      const el = {
+        skillPill: document.getElementById('skillPill'),
+        streakPill: document.getElementById('streakPill'),
+        starPill: document.getElementById('starPill'),
+        subject: document.getElementById('subject'),
+        newProblem: document.getElementById('newProblem'),
+        problemText: document.getElementById('problemText'),
+        answerInput: document.getElementById('answerInput'),
+        submitAnswer: document.getElementById('submitAnswer'),
+        hintBtn: document.getElementById('hintBtn'),
+        feedback: document.getElementById('feedback'),
+        hintText: document.getElementById('hintText'),
+        pinInput: document.getElementById('pinInput'),
+        unlockBtn: document.getElementById('unlockBtn'),
+        parentView: document.getElementById('parentView'),
+        summaryGrid: document.getElementById('summaryGrid'),
+        historyBody: document.getElementById('historyBody')
       };
 
-      const appendValue = (value) => {
-        expression += value;
-        updateDisplay(expression);
-      };
+      function loadState() {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) return JSON.parse(raw);
+        return {
+          skillScore: 50,
+          totalCorrect: 0,
+          stars: 0,
+          streakCorrect: 0,
+          currentProblem: null,
+          logs: [],
+          sessionId: Date.now()
+        };
+      }
 
-      const calculate = () => {
-        try {
-          const result = expression ? Function(`"use strict"; return (${expression})`)() : 0;
-          expression = String(result);
-          updateDisplay(expression);
-        } catch (err) {
-          expression = '';
-          updateDisplay('エラー');
+      function saveState() { localStorage.setItem(storageKey, JSON.stringify(state)); }
+      function difficultyFromSkill() { return Math.max(1, Math.min(10, Math.ceil(state.skillScore / 10))); }
+
+      function updateHeader() {
+        el.skillPill.textContent = `能力値: ${state.skillScore.toFixed(1)}`;
+        el.streakPill.textContent = `連続正解: ${state.streakCorrect}`;
+        el.starPill.textContent = `スター: ${state.stars}`;
+      }
+
+      function pickDifficulty() {
+        const base = difficultyFromSkill();
+        const r = Math.random();
+        if (r < 0.2) return Math.max(1, base - 1);
+        if (r > 0.9) return Math.min(10, base + 1);
+        return base;
+      }
+
+      function genMath(d) {
+        const max = d < 4 ? 20 : d < 7 ? 99 : 999;
+        const a = 1 + Math.floor(Math.random() * max);
+        const b = 1 + Math.floor(Math.random() * max);
+        const ops = d < 5 ? ['+', '-'] : ['+', '-', '*'];
+        const op = ops[Math.floor(Math.random() * ops.length)];
+        const answer = op === '+' ? a + b : op === '-' ? a - b : a * b;
+        return { text: `${a} ${op} ${b} = ?`, answer: String(answer), topic: op === '+' ? 'たし算' : op === '-' ? 'ひき算' : 'かけ算' };
+      }
+
+      function genJapanese(d) {
+        const bank = [
+          { q: '「山」の読みは？（ひらがな）', a: 'やま', topic: '漢字の読み' },
+          { q: '「犬」をひらがなで書いて', a: 'いぬ', topic: '漢字→ひらがな' },
+          { q: '「あ ＿ う」空欄に入る文字は？', a: 'い', topic: '文字順' },
+          { q: '「きょう」のカタカナは？', a: 'キョウ', topic: 'ひらがな→カタカナ' },
+          { q: '「はやい」の反対語は？', a: 'おそい', topic: 'ことば' }
+        ];
+        const idx = Math.min(bank.length - 1, Math.floor((d - 1) / 2) + Math.floor(Math.random() * 2));
+        return { text: bank[idx].q, answer: bank[idx].a, topic: bank[idx].topic };
+      }
+
+      function newProblem() {
+        const subject = el.subject.value;
+        const difficulty = pickDifficulty();
+        const p = subject === 'math' ? genMath(difficulty) : genJapanese(difficulty);
+        state.currentProblem = { ...p, subject, difficulty, startedAt: Date.now(), hintUsed: false, retryCount: 0 };
+        el.problemText.textContent = p.text;
+        el.answerInput.value = '';
+        el.hintText.textContent = '';
+        setFeedback('考えてみよう！', 'idle');
+        saveState();
+      }
+
+      function setFeedback(text, mode) {
+        el.feedback.textContent = text;
+        el.feedback.className = `feedback ${mode}`;
+      }
+
+      function normalize(v) { return v.trim().replace(/\s+/g, '').toLowerCase(); }
+
+      function answer() {
+        const p = state.currentProblem;
+        if (!p) return;
+        const userAns = el.answerInput.value;
+        const isCorrect = normalize(userAns) === normalize(p.answer);
+        const answerTimeSec = Math.max(1, Math.round((Date.now() - p.startedAt) / 1000));
+
+        if (isCorrect) {
+          state.streakCorrect += 1;
+          state.totalCorrect += 1;
+          state.stars += 1 + (state.streakCorrect % 5 === 0 ? 3 : 0);
+          const bonus = answerTimeSec <= 8 ? 1.2 : 0.5;
+          state.skillScore = Math.min(100, state.skillScore + bonus);
+          setFeedback('できた！すばらしい！', 'ok');
+        } else {
+          state.streakCorrect = 0;
+          state.skillScore = Math.max(0, state.skillScore - 0.8);
+          p.retryCount += 1;
+          setFeedback('おしい！もう1回やってみよう', 'ng');
         }
-      };
 
-      const clear = () => {
-        expression = '';
-        updateDisplay('0');
-      };
-
-      buttons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const action = btn.dataset.action;
-          const value = btn.dataset.value;
-
-          if (action === 'equals') {
-            calculate();
-          } else if (action === 'clear') {
-            clear();
-          } else if (value) {
-            appendValue(value);
-          }
+        state.logs.push({
+          childId: 'child-1',
+          sessionId: state.sessionId,
+          answeredAt: new Date().toISOString(),
+          subject: p.subject,
+          topic: p.topic,
+          difficulty: p.difficulty,
+          problemDigest: p.text,
+          isCorrect,
+          answerTimeSec,
+          retryCount: p.retryCount,
+          hintUsed: p.hintUsed
         });
+
+        if (state.logs.length > 500) state.logs = state.logs.slice(-500);
+        updateHeader();
+        saveState();
+        renderParent();
+      }
+
+      function showHint() {
+        const p = state.currentProblem;
+        if (!p) return;
+        p.hintUsed = true;
+        if (p.subject === 'math') {
+          el.hintText.textContent = 'ヒント: 先に左の数と右の数をゆっくり見て、記号の意味を考えよう。';
+        } else {
+          el.hintText.textContent = `ヒント: はじめの文字は「${p.answer.charAt(0)}」です。`;
+        }
+        saveState();
+      }
+
+      function renderParent() {
+        const today = new Date().toISOString().slice(0, 10);
+        const todayLogs = state.logs.filter((l) => l.answeredAt.startsWith(today));
+        const solved = todayLogs.length;
+        const correct = todayLogs.filter((l) => l.isCorrect).length;
+        const accuracy = solved ? Math.round((correct / solved) * 100) : 0;
+        const avg = solved ? (todayLogs.reduce((s, l) => s + l.answerTimeSec, 0) / solved).toFixed(1) : '0.0';
+        const targetRate = Math.round((solved / dailyTarget) * 100);
+
+        el.summaryGrid.innerHTML = `
+          <div class="stat"><strong>今日の問題数</strong><div>${solved}問</div></div>
+          <div class="stat"><strong>今日の正答率</strong><div>${accuracy}%</div></div>
+          <div class="stat"><strong>平均回答時間</strong><div>${avg}秒</div></div>
+          <div class="stat"><strong>目標達成率</strong><div>${targetRate}%</div></div>
+        `;
+
+        const rows = [...state.logs].reverse().slice(0, 100).map((l) => `
+          <tr>
+            <td>${new Date(l.answeredAt).toLocaleString('ja-JP')}</td>
+            <td>${l.subject === 'math' ? '算数' : '国語'}</td>
+            <td>${l.problemDigest}</td>
+            <td>${l.isCorrect ? '正解' : '不正解'}</td>
+            <td>${l.answerTimeSec}秒</td>
+            <td>${l.hintUsed ? 'あり' : 'なし'}</td>
+          </tr>
+        `).join('');
+        el.historyBody.innerHTML = rows || '<tr><td colspan="6">まだ記録がありません。</td></tr>';
+      }
+
+      el.newProblem.addEventListener('click', newProblem);
+      el.submitAnswer.addEventListener('click', answer);
+      el.hintBtn.addEventListener('click', showHint);
+      el.unlockBtn.addEventListener('click', () => {
+        if (el.pinInput.value === pinCode) {
+          el.parentView.classList.add('show');
+          renderParent();
+        } else {
+          alert('PINが違います');
+        }
       });
+
+      updateHeader();
+      renderParent();
     })();
   </script>
 </body>
