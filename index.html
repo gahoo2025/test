@@ -2,171 +2,745 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>シンプル電卓</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#6366f1" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>タスク管理</title>
+  <link rel="manifest" href="manifest.json" />
   <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
     :root {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      color: #1f2937;
-      background: #f9fafb;
+      --primary: #6366f1;
+      --primary-light: #818cf8;
+      --primary-dark: #4f46e5;
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --surface2: #f8fafc;
+      --border: #e2e8f0;
+      --text: #0f172a;
+      --text2: #64748b;
+      --text3: #94a3b8;
+      --danger: #ef4444;
+      --success: #22c55e;
+      --warn: #f59e0b;
+      --radius: 14px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
 
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --surface: #1e293b;
+        --surface2: #1e293b;
+        --border: #334155;
+        --text: #f1f5f9;
+        --text2: #94a3b8;
+        --text3: #64748b;
+        --shadow: 0 2px 12px rgba(0,0,0,0.4);
+        --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+      }
+    }
+
+    html { font-size: 16px; }
     body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
       display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
+      flex-direction: column;
+      -webkit-tap-highlight-color: transparent;
     }
 
-    .calculator {
-      background: #ffffff;
-      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
-      border-radius: 16px;
-      padding: 18px;
-      width: 320px;
-    }
-
-    .display {
-      background: #0f172a;
-      color: #e5e7eb;
-      border-radius: 12px;
-      padding: 16px;
-      text-align: right;
-      font-size: 1.8rem;
-      letter-spacing: 1px;
-      min-height: 60px;
-      box-sizing: border-box;
-      overflow: hidden;
-      word-break: break-all;
-    }
-
-    .buttons {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      margin-top: 16px;
-    }
-
-    button {
-      border: none;
-      padding: 14px;
-      font-size: 1.2rem;
-      border-radius: 12px;
-      cursor: pointer;
-      background: #e5e7eb;
-      color: #0f172a;
-      transition: transform 0.05s ease, box-shadow 0.1s ease, background 0.2s ease;
-    }
-
-    button:active {
-      transform: translateY(1px);
-    }
-
-    button:hover {
-      background: #d4d7dd;
-    }
-
-    .operator {
-      background: #fef3c7;
-      color: #92400e;
-    }
-
-    .operator:hover {
-      background: #fde68a;
-    }
-
-    .equals {
-      background: #2563eb;
+    /* ===== HEADER ===== */
+    header {
+      background: var(--primary);
       color: white;
+      padding: 16px 20px 20px;
+      padding-top: max(16px, env(safe-area-inset-top));
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow);
+    }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+    .header-top h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.3px; }
+    .header-stats { display: flex; gap: 12px; font-size: 0.78rem; opacity: 0.9; }
+    .stat { display: flex; align-items: center; gap: 4px; }
+    .stat-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.7); }
+    .stat-dot.done { background: #a5f3fc; }
+
+    /* ===== FILTER BAR ===== */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding: 12px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      position: sticky;
+      top: calc(env(safe-area-inset-top) + 82px);
+      z-index: 90;
+    }
+    .filter-bar::-webkit-scrollbar { display: none; }
+    .filter-btn {
+      flex-shrink: 0;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.82rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .filter-btn:active { transform: scale(0.95); }
+
+    /* ===== MAIN CONTENT ===== */
+    main {
+      flex: 1;
+      padding: 16px 16px calc(80px + var(--safe-bottom));
+      max-width: 640px;
+      width: 100%;
+      margin: 0 auto;
     }
 
-    .equals:hover {
-      background: #1d4ed8;
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      margin: 16px 4px 8px;
     }
 
-    .clear {
-      background: #fecdd3;
-      color: #9f1239;
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text3);
+    }
+    .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
+    .empty-state p { font-size: 0.95rem; }
+
+    /* ===== TASK CARD ===== */
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .task-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      transition: transform 0.15s, opacity 0.2s;
+      border-left: 4px solid transparent;
+      position: relative;
+    }
+    .task-card.priority-high { border-left-color: var(--danger); }
+    .task-card.priority-medium { border-left-color: var(--warn); }
+    .task-card.priority-low { border-left-color: var(--success); }
+    .task-card.done { opacity: 0.55; }
+    .task-card:active { transform: scale(0.985); }
+
+    .task-check {
+      flex-shrink: 0;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      margin-top: 1px;
+    }
+    .task-card.done .task-check { background: var(--success); border-color: var(--success); }
+    .task-check::after {
+      content: '';
+      width: 10px;
+      height: 6px;
+      border-left: 2px solid white;
+      border-bottom: 2px solid white;
+      transform: rotate(-45deg) translateY(-1px);
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .task-card.done .task-check::after { opacity: 1; }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 0.97rem;
+      font-weight: 500;
+      color: var(--text);
+      line-height: 1.4;
+      word-break: break-word;
+    }
+    .task-card.done .task-title { text-decoration: line-through; color: var(--text3); }
+    .task-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 6px;
+      align-items: center;
+    }
+    .badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 2px 8px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+    }
+    .badge-cat { background: #e0e7ff; color: #4338ca; }
+    @media (prefers-color-scheme: dark) { .badge-cat { background: #312e81; color: #a5b4fc; } }
+    .badge-due { background: #fff7ed; color: #c2410c; }
+    @media (prefers-color-scheme: dark) { .badge-due { background: #431407; color: #fdba74; } }
+    .badge-due.overdue { background: #fee2e2; color: var(--danger); }
+    @media (prefers-color-scheme: dark) { .badge-due.overdue { background: #450a0a; color: #fca5a5; } }
+
+    .task-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text3);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.15s;
+    }
+    .icon-btn:hover { background: var(--bg); color: var(--text2); }
+    .icon-btn.delete:hover { color: var(--danger); }
+
+    /* ===== FAB ===== */
+    .fab {
+      position: fixed;
+      bottom: calc(20px + var(--safe-bottom));
+      right: 20px;
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      font-size: 1.8rem;
+      border: none;
+      cursor: pointer;
+      box-shadow: var(--shadow-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.15s, background 0.15s;
+      z-index: 200;
+    }
+    .fab:active { transform: scale(0.92); }
+
+    /* ===== MODAL ===== */
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 300;
+      display: none;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: var(--safe-bottom);
+    }
+    .overlay.open { display: flex; }
+
+    .modal {
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      width: 100%;
+      max-width: 640px;
+      padding: 8px 20px calc(24px + var(--safe-bottom));
+      animation: slideUp 0.25s cubic-bezier(0.4,0,0.2,1);
+    }
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to { transform: translateY(0); }
     }
 
-    .clear:hover {
-      background: #fda4af;
+    .modal-handle {
+      width: 40px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 10px auto 20px;
+    }
+    .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; }
+
+    .form-group { margin-bottom: 14px; }
+    .form-group label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%;
+      padding: 11px 14px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      outline: none;
+      transition: border-color 0.15s;
+      appearance: none;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: var(--primary);
+    }
+    .form-group textarea { resize: none; height: 80px; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+    .priority-pills {
+      display: flex;
+      gap: 8px;
+    }
+    .priority-pill {
+      flex: 1;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1.5px solid var(--border);
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.85rem;
+      font-weight: 600;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .priority-pill.selected-high { background: #fee2e2; color: var(--danger); border-color: var(--danger); }
+    .priority-pill.selected-medium { background: #fef3c7; color: var(--warn); border-color: var(--warn); }
+    .priority-pill.selected-low { background: #dcfce7; color: var(--success); border-color: var(--success); }
+    @media (prefers-color-scheme: dark) {
+      .priority-pill.selected-high { background: #450a0a; }
+      .priority-pill.selected-medium { background: #431407; }
+      .priority-pill.selected-low { background: #052e16; }
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 6px;
+      transition: background 0.15s, transform 0.1s;
+    }
+    .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
+
+    /* ===== SORT ROW ===== */
+    .sort-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 4px 4px;
+    }
+    .sort-row .label { font-size: 0.82rem; color: var(--text3); }
+    .sort-select {
+      font-size: 0.82rem;
+      color: var(--text2);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 10px;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+    }
+
+    /* ===== PROGRESS ===== */
+    .progress-bar {
+      height: 4px;
+      background: rgba(255,255,255,0.3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: white;
+      border-radius: 2px;
+      transition: width 0.4s;
     }
   </style>
 </head>
 <body>
-  <main class="calculator" aria-label="シンプル電卓">
-    <div id="display" class="display" aria-live="polite">0</div>
-    <div class="buttons" aria-label="電卓のボタン">
-      <button data-value="7">7</button>
-      <button data-value="8">8</button>
-      <button data-value="9">9</button>
-      <button class="operator" data-value="/">/</button>
 
-      <button data-value="4">4</button>
-      <button data-value="5">5</button>
-      <button data-value="6">6</button>
-      <button class="operator" data-value="*">*</button>
-
-      <button data-value="1">1</button>
-      <button data-value="2">2</button>
-      <button data-value="3">3</button>
-      <button class="operator" data-value="-">-</button>
-
-      <button class="clear" data-action="clear">C</button>
-      <button data-value="0">0</button>
-      <button class="equals" data-action="equals">=</button>
-      <button class="operator" data-value="+">+</button>
+<header>
+  <div class="header-top">
+    <h1>📋 タスク管理</h1>
+    <div class="header-stats">
+      <span class="stat"><span class="stat-dot done"></span><span id="stat-done">0</span>完了</span>
+      <span class="stat"><span class="stat-dot"></span><span id="stat-remaining">0</span>残り</span>
     </div>
-  </main>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+</header>
 
-  <script>
-    (function () {
-      const display = document.getElementById('display');
-      const buttons = document.querySelectorAll('.buttons button');
-      let expression = '';
+<div class="filter-bar" id="filter-bar">
+  <button class="filter-btn active" data-filter="all">すべて</button>
+  <button class="filter-btn" data-filter="today">今日</button>
+  <button class="filter-btn" data-filter="todo">未完了</button>
+  <button class="filter-btn" data-filter="done">完了済み</button>
+  <button class="filter-btn" data-filter="high">高優先</button>
+  <button class="filter-btn" data-filter="medium">中優先</button>
+  <button class="filter-btn" data-filter="low">低優先</button>
+</div>
 
-      const updateDisplay = (text) => {
-        display.textContent = text || '0';
-      };
+<main>
+  <div class="sort-row">
+    <span class="label" id="task-count-label">0件</span>
+    <select class="sort-select" id="sort-select">
+      <option value="created">作成日</option>
+      <option value="due">期限</option>
+      <option value="priority">優先度</option>
+      <option value="title">タイトル</option>
+    </select>
+  </div>
+  <div id="task-list" class="task-list"></div>
+  <div id="empty-state" class="empty-state" style="display:none">
+    <div class="icon">✨</div>
+    <p>タスクがありません<br>右下の＋ボタンで追加できます</p>
+  </div>
+</main>
 
-      const appendValue = (value) => {
-        expression += value;
-        updateDisplay(expression);
-      };
+<button class="fab" id="fab-btn" aria-label="タスクを追加">＋</button>
 
-      const calculate = () => {
-        try {
-          const result = expression ? Function(`"use strict"; return (${expression})`)() : 0;
-          expression = String(result);
-          updateDisplay(expression);
-        } catch (err) {
-          expression = '';
-          updateDisplay('エラー');
-        }
-      };
+<!-- Modal -->
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="タスク編集">
+  <div class="modal" id="modal">
+    <div class="modal-handle"></div>
+    <h2 id="modal-title">タスクを追加</h2>
 
-      const clear = () => {
-        expression = '';
-        updateDisplay('0');
-      };
+    <div class="form-group">
+      <label>タイトル *</label>
+      <input type="text" id="input-title" placeholder="何をしますか？" maxlength="100" />
+    </div>
 
-      buttons.forEach((btn) => {
-        btn.addEventListener('click', () => {
-          const action = btn.dataset.action;
-          const value = btn.dataset.value;
+    <div class="form-group">
+      <label>メモ</label>
+      <textarea id="input-note" placeholder="詳細・メモ（任意）"></textarea>
+    </div>
 
-          if (action === 'equals') {
-            calculate();
-          } else if (action === 'clear') {
-            clear();
-          } else if (value) {
-            appendValue(value);
-          }
-        });
+    <div class="form-row">
+      <div class="form-group">
+        <label>カテゴリ</label>
+        <input type="text" id="input-category" placeholder="仕事・個人など" maxlength="20" />
+      </div>
+      <div class="form-group">
+        <label>期限</label>
+        <input type="date" id="input-due" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>優先度</label>
+      <div class="priority-pills">
+        <div class="priority-pill" data-priority="low">低</div>
+        <div class="priority-pill selected-medium" data-priority="medium">中</div>
+        <div class="priority-pill" data-priority="high">高</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="submit-btn">追加する</button>
+  </div>
+</div>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'tasks_v2';
+  let tasks = [];
+  let editingId = null;
+  let currentFilter = 'all';
+  let currentSort = 'created';
+  let selectedPriority = 'medium';
+
+  function load() {
+    try { tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { tasks = []; }
+  }
+
+  function save() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+  }
+
+  function uid() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function today() {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  function formatDate(str) {
+    if (!str) return null;
+    const d = new Date(str + 'T00:00:00');
+    const now = new Date(); now.setHours(0,0,0,0);
+    const diff = (d - now) / 86400000;
+    if (diff < 0) return { label: '期限切れ', overdue: true };
+    if (diff === 0) return { label: '今日', overdue: false };
+    if (diff === 1) return { label: '明日', overdue: false };
+    return { label: `${d.getMonth()+1}/${d.getDate()}`, overdue: false };
+  }
+
+  const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+
+  function getFilteredSorted() {
+    let list = [...tasks];
+    const todayStr = today();
+    switch (currentFilter) {
+      case 'today': list = list.filter(t => t.due === todayStr); break;
+      case 'todo': list = list.filter(t => !t.done); break;
+      case 'done': list = list.filter(t => t.done); break;
+      case 'high': list = list.filter(t => t.priority === 'high'); break;
+      case 'medium': list = list.filter(t => t.priority === 'medium'); break;
+      case 'low': list = list.filter(t => t.priority === 'low'); break;
+    }
+    list.sort((a, b) => {
+      if (currentSort === 'due') {
+        if (!a.due && !b.due) return 0;
+        if (!a.due) return 1;
+        if (!b.due) return -1;
+        return a.due.localeCompare(b.due);
+      }
+      if (currentSort === 'priority') return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
+      if (currentSort === 'title') return a.title.localeCompare(b.title, 'ja');
+      return b.createdAt - a.createdAt;
+    });
+    return list;
+  }
+
+  function render() {
+    const list = getFilteredSorted();
+    const el = document.getElementById('task-list');
+    const empty = document.getElementById('empty-state');
+    const countLabel = document.getElementById('task-count-label');
+
+    countLabel.textContent = `${list.length}件`;
+    el.innerHTML = '';
+
+    if (list.length === 0) {
+      empty.style.display = 'block';
+      el.style.display = 'none';
+    } else {
+      empty.style.display = 'none';
+      el.style.display = 'flex';
+      list.forEach(t => el.appendChild(createCard(t)));
+    }
+
+    // stats
+    const doneCount = tasks.filter(t => t.done).length;
+    const total = tasks.length;
+    document.getElementById('stat-done').textContent = doneCount;
+    document.getElementById('stat-remaining').textContent = total - doneCount;
+    const pct = total ? Math.round(doneCount / total * 100) : 0;
+    document.getElementById('progress-fill').style.width = pct + '%';
+  }
+
+  function createCard(task) {
+    const card = document.createElement('div');
+    card.className = `task-card priority-${task.priority}${task.done ? ' done' : ''}`;
+    card.dataset.id = task.id;
+
+    const check = document.createElement('div');
+    check.className = 'task-check';
+    check.setAttribute('role', 'checkbox');
+    check.setAttribute('aria-checked', task.done);
+    check.setAttribute('aria-label', task.done ? '完了済み' : '未完了');
+    check.addEventListener('click', () => toggleDone(task.id));
+
+    const body = document.createElement('div');
+    body.className = 'task-body';
+
+    const title = document.createElement('div');
+    title.className = 'task-title';
+    title.textContent = task.title;
+
+    const meta = document.createElement('div');
+    meta.className = 'task-meta';
+
+    if (task.category) {
+      const cat = document.createElement('span');
+      cat.className = 'badge badge-cat';
+      cat.textContent = task.category;
+      meta.appendChild(cat);
+    }
+    if (task.due) {
+      const df = formatDate(task.due);
+      if (df) {
+        const due = document.createElement('span');
+        due.className = 'badge badge-due' + (df.overdue ? ' overdue' : '');
+        due.textContent = '📅 ' + df.label;
+        meta.appendChild(due);
+      }
+    }
+
+    body.appendChild(title);
+    if (meta.children.length) body.appendChild(meta);
+
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'icon-btn edit';
+    editBtn.textContent = '✏️';
+    editBtn.setAttribute('aria-label', '編集');
+    editBtn.addEventListener('click', () => openEdit(task.id));
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn delete';
+    delBtn.textContent = '🗑️';
+    delBtn.setAttribute('aria-label', '削除');
+    delBtn.addEventListener('click', () => deleteTask(task.id));
+
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+
+    card.appendChild(check);
+    card.appendChild(body);
+    card.appendChild(actions);
+    return card;
+  }
+
+  function toggleDone(id) {
+    const t = tasks.find(x => x.id === id);
+    if (t) { t.done = !t.done; save(); render(); }
+  }
+
+  function deleteTask(id) {
+    tasks = tasks.filter(x => x.id !== id);
+    save(); render();
+  }
+
+  // Modal
+  const overlay = document.getElementById('overlay');
+  const modalTitle = document.getElementById('modal-title');
+  const inputTitle = document.getElementById('input-title');
+  const inputNote = document.getElementById('input-note');
+  const inputCategory = document.getElementById('input-category');
+  const inputDue = document.getElementById('input-due');
+  const submitBtn = document.getElementById('submit-btn');
+  const priorityPills = document.querySelectorAll('.priority-pill');
+
+  function setPriority(p) {
+    selectedPriority = p;
+    priorityPills.forEach(el => {
+      el.className = 'priority-pill';
+      if (el.dataset.priority === p) el.classList.add(`selected-${p}`);
+    });
+  }
+
+  priorityPills.forEach(el => el.addEventListener('click', () => setPriority(el.dataset.priority)));
+
+  function openAdd() {
+    editingId = null;
+    modalTitle.textContent = 'タスクを追加';
+    submitBtn.textContent = '追加する';
+    inputTitle.value = '';
+    inputNote.value = '';
+    inputCategory.value = '';
+    inputDue.value = '';
+    setPriority('medium');
+    overlay.classList.add('open');
+    setTimeout(() => inputTitle.focus(), 200);
+  }
+
+  function openEdit(id) {
+    const t = tasks.find(x => x.id === id);
+    if (!t) return;
+    editingId = id;
+    modalTitle.textContent = 'タスクを編集';
+    submitBtn.textContent = '保存する';
+    inputTitle.value = t.title;
+    inputNote.value = t.note || '';
+    inputCategory.value = t.category || '';
+    inputDue.value = t.due || '';
+    setPriority(t.priority);
+    overlay.classList.add('open');
+    setTimeout(() => inputTitle.focus(), 200);
+  }
+
+  function closeModal() { overlay.classList.remove('open'); }
+
+  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
+
+  document.getElementById('fab-btn').addEventListener('click', openAdd);
+
+  submitBtn.addEventListener('click', () => {
+    const title = inputTitle.value.trim();
+    if (!title) { inputTitle.focus(); inputTitle.style.borderColor = 'var(--danger)'; return; }
+    inputTitle.style.borderColor = '';
+    if (editingId) {
+      const t = tasks.find(x => x.id === editingId);
+      if (t) {
+        t.title = title;
+        t.note = inputNote.value.trim();
+        t.category = inputCategory.value.trim();
+        t.due = inputDue.value;
+        t.priority = selectedPriority;
+      }
+    } else {
+      tasks.unshift({
+        id: uid(), title, note: inputNote.value.trim(),
+        category: inputCategory.value.trim(), due: inputDue.value,
+        priority: selectedPriority, done: false, createdAt: Date.now()
       });
-    })();
-  </script>
+    }
+    save(); render(); closeModal();
+  });
+
+  inputTitle.addEventListener('keydown', e => { if (e.key === 'Enter') submitBtn.click(); });
+
+  // Filters
+  document.getElementById('filter-bar').addEventListener('click', e => {
+    const btn = e.target.closest('.filter-btn');
+    if (!btn) return;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    render();
+  });
+
+  document.getElementById('sort-select').addEventListener('change', e => {
+    currentSort = e.target.value;
+    render();
+  });
+
+  load();
+  render();
+
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js');
+  }
+})();
+</script>
 </body>
 </html>
