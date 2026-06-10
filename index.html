@@ -10,386 +10,224 @@
   <link rel="manifest" href="manifest.json" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     :root {
-      --primary: #6366f1;
-      --primary-light: #818cf8;
-      --primary-dark: #4f46e5;
-      --bg: #f1f5f9;
-      --surface: #ffffff;
-      --surface2: #f8fafc;
-      --border: #e2e8f0;
-      --text: #0f172a;
-      --text2: #64748b;
-      --text3: #94a3b8;
-      --danger: #ef4444;
-      --success: #22c55e;
-      --warn: #f59e0b;
-      --radius: 14px;
-      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --primary: #6366f1; --primary-dark: #4f46e5;
+      --bg: #f1f5f9; --surface: #ffffff; --surface2: #f8fafc;
+      --border: #e2e8f0; --text: #0f172a; --text2: #64748b; --text3: #94a3b8;
+      --danger: #ef4444; --success: #22c55e; --warn: #f59e0b;
+      --radius: 14px; --shadow: 0 2px 12px rgba(0,0,0,0.08);
       --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
     }
-
     @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0f172a;
-        --surface: #1e293b;
-        --surface2: #1e293b;
-        --border: #334155;
-        --text: #f1f5f9;
-        --text2: #94a3b8;
-        --text3: #64748b;
-        --shadow: 0 2px 12px rgba(0,0,0,0.4);
-        --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+        --bg: #0f172a; --surface: #1e293b; --surface2: #1e293b;
+        --border: #334155; --text: #f1f5f9; --text2: #94a3b8; --text3: #64748b;
+        --shadow: 0 2px 12px rgba(0,0,0,0.4); --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
       }
     }
-
     html { font-size: 16px; }
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      -webkit-tap-highlight-color: transparent;
+      background: var(--bg); color: var(--text); min-height: 100dvh;
+      display: flex; flex-direction: column; -webkit-tap-highlight-color: transparent;
     }
-
-    /* ===== HEADER ===== */
     header {
-      background: var(--primary);
-      color: white;
-      padding: 16px 20px 20px;
-      padding-top: max(16px, env(safe-area-inset-top));
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: var(--shadow);
+      background: var(--primary); color: white;
+      padding: 16px 20px 20px; padding-top: max(16px, env(safe-area-inset-top));
+      position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow);
     }
     .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
     .header-top h1 { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.3px; }
-    .header-stats { display: flex; gap: 12px; font-size: 0.78rem; opacity: 0.9; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .header-stats { display: flex; gap: 10px; font-size: 0.78rem; opacity: 0.9; }
     .stat { display: flex; align-items: center; gap: 4px; }
     .stat-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.7); }
     .stat-dot.done { background: #a5f3fc; }
-
-    /* ===== FILTER BAR ===== */
+    .sync-btn {
+      background: rgba(255,255,255,0.18); border: none; border-radius: 8px; color: white;
+      padding: 5px 9px; font-size: 0.74rem; cursor: pointer;
+      display: flex; align-items: center; gap: 5px; transition: background 0.15s; white-space: nowrap;
+    }
+    .sync-btn:hover { background: rgba(255,255,255,0.28); }
+    .sync-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+    .sync-dot.local    { background: rgba(255,255,255,0.45); }
+    .sync-dot.connecting { background: #fbbf24; animation: blink 1s infinite; }
+    .sync-dot.synced   { background: #4ade80; }
+    .sync-dot.syncing  { background: #fbbf24; animation: blink 0.6s infinite; }
+    .sync-dot.error    { background: #f87171; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .progress-bar { height: 4px; background: rgba(255,255,255,0.3); border-radius: 2px; overflow: hidden; }
+    .progress-fill { height: 100%; background: white; border-radius: 2px; transition: width 0.4s; }
     .filter-bar {
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-      padding: 12px 20px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      position: sticky;
-      top: calc(env(safe-area-inset-top) + 82px);
-      z-index: 90;
+      display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+      padding: 12px 20px; background: var(--surface); border-bottom: 1px solid var(--border);
+      position: sticky; top: calc(env(safe-area-inset-top) + 82px); z-index: 90;
     }
     .filter-bar::-webkit-scrollbar { display: none; }
     .filter-btn {
-      flex-shrink: 0;
-      padding: 6px 14px;
-      border-radius: 20px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      color: var(--text2);
-      font-size: 0.82rem;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
+      flex-shrink: 0; padding: 6px 14px; border-radius: 20px; border: 1.5px solid var(--border);
+      background: var(--surface2); color: var(--text2); font-size: 0.82rem; font-weight: 500;
+      cursor: pointer; transition: all 0.15s; white-space: nowrap;
     }
     .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
     .filter-btn:active { transform: scale(0.95); }
-
-    /* ===== MAIN CONTENT ===== */
     main {
-      flex: 1;
-      padding: 16px 16px calc(80px + var(--safe-bottom));
-      max-width: 640px;
-      width: 100%;
-      margin: 0 auto;
+      flex: 1; padding: 16px 16px calc(80px + var(--safe-bottom));
+      max-width: 640px; width: 100%; margin: 0 auto;
     }
-
-    .section-label {
-      font-size: 0.78rem;
-      font-weight: 600;
-      color: var(--text3);
-      text-transform: uppercase;
-      letter-spacing: 0.6px;
-      margin: 16px 4px 8px;
+    .sort-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 4px; }
+    .sort-row .label { font-size: 0.82rem; color: var(--text3); }
+    .sort-select {
+      font-size: 0.82rem; color: var(--text2); background: var(--surface);
+      border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px;
+      cursor: pointer; outline: none; appearance: none;
     }
-
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text3);
-    }
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
     .empty-state .icon { font-size: 3rem; margin-bottom: 12px; }
     .empty-state p { font-size: 0.95rem; }
-
-    /* ===== TASK CARD ===== */
-    .task-list { display: flex; flex-direction: column; gap: 10px; }
-
     .task-card {
-      background: var(--surface);
-      border-radius: var(--radius);
-      padding: 14px 16px;
-      box-shadow: var(--shadow);
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      transition: transform 0.15s, opacity 0.2s;
-      border-left: 4px solid transparent;
-      position: relative;
+      background: var(--surface); border-radius: var(--radius); padding: 14px 16px;
+      box-shadow: var(--shadow); display: flex; gap: 12px; align-items: flex-start;
+      transition: transform 0.15s, opacity 0.2s; border-left: 4px solid transparent;
     }
-    .task-card.priority-high { border-left-color: var(--danger); }
+    .task-card.priority-high   { border-left-color: var(--danger); }
     .task-card.priority-medium { border-left-color: var(--warn); }
-    .task-card.priority-low { border-left-color: var(--success); }
+    .task-card.priority-low    { border-left-color: var(--success); }
     .task-card.done { opacity: 0.55; }
     .task-card:active { transform: scale(0.985); }
-
     .task-check {
-      flex-shrink: 0;
-      width: 24px;
-      height: 24px;
-      border-radius: 50%;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s;
-      margin-top: 1px;
+      flex-shrink: 0; width: 24px; height: 24px; border-radius: 50%;
+      border: 2px solid var(--border); background: var(--surface2); cursor: pointer;
+      display: flex; align-items: center; justify-content: center; transition: all 0.2s; margin-top: 1px;
     }
     .task-card.done .task-check { background: var(--success); border-color: var(--success); }
     .task-check::after {
-      content: '';
-      width: 10px;
-      height: 6px;
-      border-left: 2px solid white;
-      border-bottom: 2px solid white;
-      transform: rotate(-45deg) translateY(-1px);
-      opacity: 0;
-      transition: opacity 0.15s;
+      content: ''; width: 10px; height: 6px; border-left: 2px solid white; border-bottom: 2px solid white;
+      transform: rotate(-45deg) translateY(-1px); opacity: 0; transition: opacity 0.15s;
     }
     .task-card.done .task-check::after { opacity: 1; }
-
     .task-body { flex: 1; min-width: 0; }
-    .task-title {
-      font-size: 0.97rem;
-      font-weight: 500;
-      color: var(--text);
-      line-height: 1.4;
-      word-break: break-word;
-    }
+    .task-title { font-size: 0.97rem; font-weight: 500; color: var(--text); line-height: 1.4; word-break: break-word; }
     .task-card.done .task-title { text-decoration: line-through; color: var(--text3); }
-    .task-meta {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 6px;
-      align-items: center;
-    }
-    .badge {
-      font-size: 0.72rem;
-      font-weight: 600;
-      padding: 2px 8px;
-      border-radius: 20px;
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
+    .task-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; align-items: center; }
+    .badge { font-size: 0.72rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; display: inline-flex; align-items: center; gap: 3px; }
     .badge-cat { background: #e0e7ff; color: #4338ca; }
     @media (prefers-color-scheme: dark) { .badge-cat { background: #312e81; color: #a5b4fc; } }
     .badge-due { background: #fff7ed; color: #c2410c; }
     @media (prefers-color-scheme: dark) { .badge-due { background: #431407; color: #fdba74; } }
     .badge-due.overdue { background: #fee2e2; color: var(--danger); }
     @media (prefers-color-scheme: dark) { .badge-due.overdue { background: #450a0a; color: #fca5a5; } }
-
-    .task-actions {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      flex-shrink: 0;
-    }
+    .task-actions { display: flex; flex-direction: column; gap: 4px; flex-shrink: 0; }
     .icon-btn {
-      width: 32px;
-      height: 32px;
-      border-radius: 8px;
-      border: none;
-      background: transparent;
-      color: var(--text3);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-      transition: all 0.15s;
+      width: 32px; height: 32px; border-radius: 8px; border: none; background: transparent;
+      color: var(--text3); cursor: pointer; display: flex; align-items: center; justify-content: center;
+      font-size: 1rem; transition: all 0.15s;
     }
     .icon-btn:hover { background: var(--bg); color: var(--text2); }
     .icon-btn.delete:hover { color: var(--danger); }
-
-    /* ===== FAB ===== */
     .fab {
-      position: fixed;
-      bottom: calc(20px + var(--safe-bottom));
-      right: 20px;
-      width: 58px;
-      height: 58px;
-      border-radius: 50%;
-      background: var(--primary);
-      color: white;
-      font-size: 1.8rem;
-      border: none;
-      cursor: pointer;
-      box-shadow: var(--shadow-lg);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.15s, background 0.15s;
-      z-index: 200;
+      position: fixed; bottom: calc(20px + var(--safe-bottom)); right: 20px;
+      width: 58px; height: 58px; border-radius: 50%; background: var(--primary); color: white;
+      font-size: 1.8rem; border: none; cursor: pointer; box-shadow: var(--shadow-lg);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.15s; z-index: 200;
     }
     .fab:active { transform: scale(0.92); }
-
-    /* ===== MODAL ===== */
     .overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.5);
-      z-index: 300;
-      display: none;
-      align-items: flex-end;
-      justify-content: center;
-      padding-bottom: var(--safe-bottom);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 300;
+      display: none; align-items: flex-end; justify-content: center;
     }
     .overlay.open { display: flex; }
-
     .modal {
-      background: var(--surface);
-      border-radius: 24px 24px 0 0;
-      width: 100%;
-      max-width: 640px;
+      background: var(--surface); border-radius: 24px 24px 0 0; width: 100%; max-width: 640px;
       padding: 8px 20px calc(24px + var(--safe-bottom));
       animation: slideUp 0.25s cubic-bezier(0.4,0,0.2,1);
+      max-height: 90dvh; overflow-y: auto;
     }
-    @keyframes slideUp {
-      from { transform: translateY(100%); }
-      to { transform: translateY(0); }
-    }
-
-    .modal-handle {
-      width: 40px; height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      margin: 10px auto 20px;
-    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .modal-handle { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 10px auto 20px; }
     .modal h2 { font-size: 1.1rem; font-weight: 700; margin-bottom: 18px; }
-
     .form-group { margin-bottom: 14px; }
-    .form-group label {
-      display: block;
-      font-size: 0.8rem;
-      font-weight: 600;
-      color: var(--text2);
-      margin-bottom: 6px;
-    }
+    .form-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
     .form-group input, .form-group select, .form-group textarea {
-      width: 100%;
-      padding: 11px 14px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 1rem;
-      font-family: inherit;
-      outline: none;
-      transition: border-color 0.15s;
-      appearance: none;
+      width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--surface2); color: var(--text); font-size: 1rem; font-family: inherit;
+      outline: none; transition: border-color 0.15s; appearance: none;
     }
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-      border-color: var(--primary);
-    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color: var(--primary); }
     .form-group textarea { resize: none; height: 80px; }
-
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-
-    .priority-pills {
-      display: flex;
-      gap: 8px;
-    }
+    .priority-pills { display: flex; gap: 8px; }
     .priority-pill {
-      flex: 1;
-      padding: 10px;
-      border-radius: 10px;
-      border: 1.5px solid var(--border);
-      background: var(--surface2);
-      color: var(--text2);
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-align: center;
-      transition: all 0.15s;
+      flex: 1; padding: 10px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--surface2); color: var(--text2); font-size: 0.85rem; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.15s;
     }
-    .priority-pill.selected-high { background: #fee2e2; color: var(--danger); border-color: var(--danger); }
-    .priority-pill.selected-medium { background: #fef3c7; color: var(--warn); border-color: var(--warn); }
-    .priority-pill.selected-low { background: #dcfce7; color: var(--success); border-color: var(--success); }
+    .priority-pill.selected-high   { background: #fee2e2; color: var(--danger); border-color: var(--danger); }
+    .priority-pill.selected-medium { background: #fef3c7; color: var(--warn);   border-color: var(--warn); }
+    .priority-pill.selected-low    { background: #dcfce7; color: var(--success); border-color: var(--success); }
     @media (prefers-color-scheme: dark) {
-      .priority-pill.selected-high { background: #450a0a; }
+      .priority-pill.selected-high   { background: #450a0a; }
       .priority-pill.selected-medium { background: #431407; }
-      .priority-pill.selected-low { background: #052e16; }
+      .priority-pill.selected-low    { background: #052e16; }
     }
-
     .btn-primary {
-      width: 100%;
-      padding: 14px;
-      border-radius: 12px;
-      border: none;
-      background: var(--primary);
-      color: white;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      margin-top: 6px;
-      transition: background 0.15s, transform 0.1s;
+      width: 100%; padding: 14px; border-radius: 12px; border: none;
+      background: var(--primary); color: white; font-size: 1rem; font-weight: 700;
+      cursor: pointer; margin-top: 6px; transition: background 0.15s, transform 0.1s;
     }
     .btn-primary:active { transform: scale(0.98); background: var(--primary-dark); }
-
-    /* ===== SORT ROW ===== */
-    .sort-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 8px 4px 4px;
+    .btn-secondary {
+      width: 100%; padding: 12px; border-radius: 12px; border: 1.5px solid var(--border);
+      background: transparent; color: var(--text2); font-size: 0.95rem; font-weight: 600;
+      cursor: pointer; margin-top: 8px; transition: all 0.15s;
     }
-    .sort-row .label { font-size: 0.82rem; color: var(--text3); }
-    .sort-select {
-      font-size: 0.82rem;
-      color: var(--text2);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 4px 10px;
-      cursor: pointer;
-      outline: none;
-      appearance: none;
+    .btn-secondary.danger { color: var(--danger); border-color: #fca5a5; }
+    /* Sync Modal */
+    .status-row {
+      display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+      border-radius: 10px; background: var(--surface2); border: 1px solid var(--border);
+      font-size: 0.88rem; margin-bottom: 16px;
     }
-
-    /* ===== PROGRESS ===== */
-    .progress-bar {
-      height: 4px;
-      background: rgba(255,255,255,0.3);
-      border-radius: 2px;
-      overflow: hidden;
+    .status-text { color: var(--text2); }
+    .sync-code-box {
+      background: var(--surface2); border: 1.5px solid var(--border); border-radius: 12px;
+      padding: 14px 16px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
     }
-    .progress-fill {
-      height: 100%;
-      background: white;
-      border-radius: 2px;
-      transition: width 0.4s;
+    .sync-code-text { font-family: monospace; font-size: 1.4rem; font-weight: 700; letter-spacing: 3px; color: var(--primary); }
+    .copy-btn {
+      padding: 7px 14px; border-radius: 8px; border: none; background: var(--primary);
+      color: white; font-size: 0.82rem; font-weight: 600; cursor: pointer; flex-shrink: 0; transition: all 0.15s;
+    }
+    .copy-btn:active { transform: scale(0.95); }
+    .info-box {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px;
+      padding: 12px 14px; font-size: 0.83rem; color: #1e40af; line-height: 1.6; margin-bottom: 14px;
+    }
+    @media (prefers-color-scheme: dark) { .info-box { background: #1e3a5f; border-color: #1e40af; color: #93c5fd; } }
+    .divider {
+      display: flex; align-items: center; gap: 10px; color: var(--text3); font-size: 0.8rem; margin: 16px 0;
+    }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+    .input-row { display: flex; gap: 8px; }
+    .input-row input {
+      flex: 1; padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--surface2); color: var(--text); font-size: 1rem; font-family: monospace;
+      font-weight: 700; letter-spacing: 1px; outline: none; text-transform: uppercase;
+    }
+    .input-row input:focus { border-color: var(--primary); }
+    .input-row button {
+      padding: 11px 16px; border-radius: 10px; border: none; background: var(--primary);
+      color: white; font-size: 0.9rem; font-weight: 700; cursor: pointer; white-space: nowrap; transition: all 0.15s;
+    }
+    .input-row button:active { transform: scale(0.95); }
+    .howto-steps { font-size: 0.86rem; color: var(--text2); line-height: 2; }
+    .howto-steps a { color: var(--primary); }
+    code {
+      background: var(--surface2); padding: 1px 5px; border-radius: 4px;
+      font-family: monospace; font-size: 0.9em; border: 1px solid var(--border);
     }
   </style>
 </head>
@@ -398,9 +236,15 @@
 <header>
   <div class="header-top">
     <h1>📋 タスク管理</h1>
-    <div class="header-stats">
-      <span class="stat"><span class="stat-dot done"></span><span id="stat-done">0</span>完了</span>
-      <span class="stat"><span class="stat-dot"></span><span id="stat-remaining">0</span>残り</span>
+    <div class="header-right">
+      <button class="sync-btn" id="sync-btn" aria-label="同期設定">
+        <span class="sync-dot local" id="sync-dot"></span>
+        <span id="sync-label">同期オフ</span>
+      </button>
+      <div class="header-stats">
+        <span class="stat"><span class="stat-dot done"></span><span id="stat-done">0</span>完了</span>
+        <span class="stat"><span class="stat-dot"></span><span id="stat-remaining">0</span>残り</span>
+      </div>
     </div>
   </div>
   <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
@@ -435,22 +279,19 @@
 
 <button class="fab" id="fab-btn" aria-label="タスクを追加">＋</button>
 
-<!-- Modal -->
-<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="タスク編集">
-  <div class="modal" id="modal">
+<!-- Task Modal -->
+<div class="overlay" id="task-overlay">
+  <div class="modal">
     <div class="modal-handle"></div>
     <h2 id="modal-title">タスクを追加</h2>
-
     <div class="form-group">
       <label>タイトル *</label>
       <input type="text" id="input-title" placeholder="何をしますか？" maxlength="100" />
     </div>
-
     <div class="form-group">
       <label>メモ</label>
       <textarea id="input-note" placeholder="詳細・メモ（任意）"></textarea>
     </div>
-
     <div class="form-row">
       <div class="form-group">
         <label>カテゴリ</label>
@@ -461,7 +302,6 @@
         <input type="date" id="input-due" />
       </div>
     </div>
-
     <div class="form-group">
       <label>優先度</label>
       <div class="priority-pills">
@@ -470,277 +310,415 @@
         <div class="priority-pill" data-priority="high">高</div>
       </div>
     </div>
-
     <button class="btn-primary" id="submit-btn">追加する</button>
   </div>
 </div>
 
-<script>
-(function () {
-  const STORAGE_KEY = 'tasks_v2';
+<!-- Sync Modal -->
+<div class="overlay" id="sync-overlay">
+  <div class="modal" id="sync-modal">
+    <div class="modal-handle"></div>
+    <h2>☁️ 端末間同期</h2>
+
+    <div class="status-row">
+      <span id="sync-status-icon">🔘</span>
+      <span class="status-text" id="sync-status-text">未接続（ローカル保存のみ）</span>
+    </div>
+
+    <!-- Section A: Firebase setup -->
+    <div id="section-setup">
+      <div class="info-box">
+        <b>Firebaseを使った無料のリアルタイム同期</b><br>
+        一度設定すれば、スマホ・PC・タブレットで自動同期されます。
+      </div>
+      <div class="form-group">
+        <label>Firebase設定（firebaseConfig の {} の中身）</label>
+        <textarea id="input-fb-config" placeholder='{
+  "apiKey": "AIza...",
+  "authDomain": "your-app.firebaseapp.com",
+  "projectId": "your-app",
+  "storageBucket": "your-app.appspot.com",
+  "messagingSenderId": "123456",
+  "appId": "1:123456:web:abcdef"
+}' style="height:140px;font-family:monospace;font-size:0.8rem;"></textarea>
+      </div>
+      <button class="btn-primary" id="connect-btn">接続する</button>
+      <button class="btn-secondary" id="howto-btn">Firebaseの設定方法を見る →</button>
+    </div>
+
+    <!-- Section B: Connected -->
+    <div id="section-connected" style="display:none">
+      <p style="font-size:0.85rem;color:var(--text2);margin-bottom:10px;">あなたの同期コード（他の端末で入力すると同期されます）</p>
+      <div class="sync-code-box">
+        <span class="sync-code-text" id="code-display">----</span>
+        <button class="copy-btn" id="copy-btn">コピー</button>
+      </div>
+      <div class="divider">別の端末のコードで上書きする</div>
+      <div class="form-group">
+        <label>他の端末の同期コードを入力</label>
+        <div class="input-row">
+          <input type="text" id="input-join-code" placeholder="XXXX-XXXX" maxlength="9" />
+          <button id="join-btn">接続</button>
+        </div>
+      </div>
+      <button class="btn-secondary danger" id="disconnect-btn">同期を切断する</button>
+    </div>
+
+    <!-- Section C: How-to -->
+    <div id="section-howto" style="display:none">
+      <div class="howto-steps">
+        <b>① </b><a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a> を開く<br>
+        <b>② </b>「プロジェクトを追加」→ 名前を入力 → 作成<br>
+        <b>③ </b>左メニュー「Firestore Database」→「データベースの作成」→「テストモードで開始」→ ロケーション選択して有効化<br>
+        <b>④ </b>左上の歯車アイコン「プロジェクトの設定」→「ウェブアプリを追加」（&lt;/&gt; アイコン）<br>
+        <b>⑤ </b>アプリ名を入力して登録 → 表示された <code>firebaseConfig</code> の <code>{ ... }</code> をコピー<br>
+        <b>⑥ </b>前の画面に戻り、入力欄に貼り付けて「接続する」
+      </div>
+      <button class="btn-secondary" id="back-btn" style="margin-top:16px;">← 戻る</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  const STORAGE_KEY  = 'tasks_v2';
+  const FB_KEY       = 'fb_config';
+  const CODE_KEY     = 'sync_code';
+
   let tasks = [];
   let editingId = null;
   let currentFilter = 'all';
   let currentSort = 'created';
   let selectedPriority = 'medium';
 
-  function load() {
-    try { tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { tasks = []; }
+  let fbMods       = null;   // Firebase module cache
+  let firebaseApp  = null;
+  let db           = null;
+  let syncCode     = null;
+  let unsub        = null;
+  let syncTimer    = null;
+  let lastPush     = 0;
+  let syncOn       = false;
+
+  // ── local storage ──────────────────────────────────────────────
+  function load()  { try { tasks = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { tasks = []; } }
+  function save()  { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); }
+
+  // ── utilities ──────────────────────────────────────────────────
+  function uid()   { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function today() { return new Date().toISOString().slice(0,10); }
+
+  function genCode() {
+    const c = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const p = () => Array.from({length:4}, () => c[Math.random()*c.length|0]).join('');
+    return `${p()}-${p()}`;
   }
 
-  function save() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-  }
-
-  function uid() {
-    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
-  }
-
-  function today() {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  function formatDate(str) {
-    if (!str) return null;
-    const d = new Date(str + 'T00:00:00');
+  function fmtDate(s) {
+    if (!s) return null;
+    const d = new Date(s + 'T00:00:00');
     const now = new Date(); now.setHours(0,0,0,0);
-    const diff = (d - now) / 86400000;
-    if (diff < 0) return { label: '期限切れ', overdue: true };
-    if (diff === 0) return { label: '今日', overdue: false };
-    if (diff === 1) return { label: '明日', overdue: false };
-    return { label: `${d.getMonth()+1}/${d.getDate()}`, overdue: false };
+    const diff = (d-now)/86400000;
+    if (diff < 0) return { label:'期限切れ', overdue:true  };
+    if (diff === 0) return { label:'今日',     overdue:false };
+    if (diff === 1) return { label:'明日',     overdue:false };
+    return { label:`${d.getMonth()+1}/${d.getDate()}`, overdue:false };
   }
 
-  const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+  const PORD = { high:0, medium:1, low:2 };
 
-  function getFilteredSorted() {
-    let list = [...tasks];
-    const todayStr = today();
-    switch (currentFilter) {
-      case 'today': list = list.filter(t => t.due === todayStr); break;
-      case 'todo': list = list.filter(t => !t.done); break;
-      case 'done': list = list.filter(t => t.done); break;
-      case 'high': list = list.filter(t => t.priority === 'high'); break;
-      case 'medium': list = list.filter(t => t.priority === 'medium'); break;
-      case 'low': list = list.filter(t => t.priority === 'low'); break;
-    }
-    list.sort((a, b) => {
-      if (currentSort === 'due') {
-        if (!a.due && !b.due) return 0;
-        if (!a.due) return 1;
-        if (!b.due) return -1;
-        return a.due.localeCompare(b.due);
+  // ── Firebase ───────────────────────────────────────────────────
+  async function loadFb() {
+    if (fbMods) return fbMods;
+    const v = '10.12.0';
+    const [a, f] = await Promise.all([
+      import(`https://www.gstatic.com/firebasejs/${v}/firebase-app.js`),
+      import(`https://www.gstatic.com/firebasejs/${v}/firebase-firestore.js`),
+    ]);
+    fbMods = {
+      initializeApp: a.initializeApp, getApps: a.getApps, getApp: a.getApp,
+      getFirestore: f.getFirestore, doc: f.doc, getDoc: f.getDoc,
+      setDoc: f.setDoc, onSnapshot: f.onSnapshot,
+    };
+    return fbMods;
+  }
+
+  async function connect(configJson, code) {
+    setStatus('connecting', '接続中…');
+    try {
+      const m = await loadFb();
+      const cfg = JSON.parse(configJson);
+      if (!firebaseApp) {
+        firebaseApp = m.getApps().length === 0 ? m.initializeApp(cfg) : m.getApp();
       }
-      if (currentSort === 'priority') return PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority];
-      if (currentSort === 'title') return a.title.localeCompare(b.title, 'ja');
+      db = m.getFirestore(firebaseApp);
+      syncCode = code;
+
+      const ref = m.doc(db, 'rooms', code);
+      const snap = await m.getDoc(ref);
+      if (snap.exists()) {
+        const remote = snap.data();
+        // merge: keep local tasks not present in remote
+        const remoteIds = new Set((remote.tasks||[]).map(t=>t.id));
+        const localOnly = tasks.filter(t => !remoteIds.has(t.id));
+        tasks = [...(remote.tasks||[]), ...localOnly];
+        save(); render();
+      } else {
+        await m.setDoc(ref, { tasks, updatedAt: Date.now() });
+      }
+
+      if (unsub) unsub();
+      unsub = m.onSnapshot(ref, snap => {
+        if (!snap.exists()) return;
+        const d = snap.data();
+        if ((d.updatedAt||0) > lastPush) { tasks = d.tasks||[]; save(); render(); }
+      });
+
+      syncOn = true;
+      setStatus('synced', '同期済み');
+      return true;
+    } catch(e) {
+      console.error(e);
+      const msg = e.message?.includes('JSON') ? '設定JSONが無効です'
+                : e.message?.includes('network') ? 'ネットワークエラー'
+                : '接続エラー';
+      setStatus('error', msg);
+      return false;
+    }
+  }
+
+  function pushLater() {
+    if (!syncOn) return;
+    clearTimeout(syncTimer);
+    setStatus('syncing', '同期中…');
+    syncTimer = setTimeout(async () => {
+      try {
+        const m = fbMods;
+        const ref = m.doc(db, 'rooms', syncCode);
+        lastPush = Date.now();
+        await m.setDoc(ref, { tasks, updatedAt: lastPush });
+        setStatus('synced', '同期済み');
+      } catch { setStatus('error', '同期失敗'); }
+    }, 900);
+  }
+
+  function disconnect() {
+    if (unsub) { unsub(); unsub = null; }
+    db = null; syncOn = false; syncCode = null;
+    localStorage.removeItem(FB_KEY); localStorage.removeItem(CODE_KEY);
+    setStatus('local', '同期オフ');
+  }
+
+  function setStatus(state, label) {
+    document.getElementById('sync-dot').className   = 'sync-dot ' + state;
+    document.getElementById('sync-label').textContent = label;
+    const icons = { local:'🔘', connecting:'🟡', synced:'🟢', syncing:'🔄', error:'🔴' };
+    const texts = {
+      local:'未接続（ローカル保存のみ）', connecting:'接続中…',
+      synced:'接続済み・リアルタイム同期中', syncing:'同期中…', error:'エラー: '+label
+    };
+    document.getElementById('sync-status-icon').textContent = icons[state]||'🔘';
+    document.getElementById('sync-status-text').textContent = texts[state]||label;
+  }
+
+  async function autoConnect() {
+    const cfg  = localStorage.getItem(FB_KEY);
+    const code = localStorage.getItem(CODE_KEY);
+    if (cfg && code) {
+      showSection('connected'); updateCodeDisplay(code);
+      await connect(cfg, code);
+    }
+  }
+
+  // ── render ──────────────────────────────────────────────────────
+  function filtered() {
+    let list = [...tasks];
+    const tod = today();
+    if (currentFilter==='today')  list = list.filter(t=>t.due===tod);
+    if (currentFilter==='todo')   list = list.filter(t=>!t.done);
+    if (currentFilter==='done')   list = list.filter(t=>t.done);
+    if (currentFilter==='high')   list = list.filter(t=>t.priority==='high');
+    if (currentFilter==='medium') list = list.filter(t=>t.priority==='medium');
+    if (currentFilter==='low')    list = list.filter(t=>t.priority==='low');
+    list.sort((a,b) => {
+      if (currentSort==='due')      { if(!a.due&&!b.due)return 0; if(!a.due)return 1; if(!b.due)return -1; return a.due.localeCompare(b.due); }
+      if (currentSort==='priority') return PORD[a.priority]-PORD[b.priority];
+      if (currentSort==='title')    return a.title.localeCompare(b.title,'ja');
       return b.createdAt - a.createdAt;
     });
     return list;
   }
 
   function render() {
-    const list = getFilteredSorted();
-    const el = document.getElementById('task-list');
-    const empty = document.getElementById('empty-state');
-    const countLabel = document.getElementById('task-count-label');
-
-    countLabel.textContent = `${list.length}件`;
+    const list = filtered();
+    const el   = document.getElementById('task-list');
+    const emp  = document.getElementById('empty-state');
+    document.getElementById('task-count-label').textContent = `${list.length}件`;
     el.innerHTML = '';
+    if (!list.length) { emp.style.display='block'; el.style.display='none'; }
+    else { emp.style.display='none'; el.style.display='flex'; list.forEach(t=>el.appendChild(card(t))); }
 
-    if (list.length === 0) {
-      empty.style.display = 'block';
-      el.style.display = 'none';
-    } else {
-      empty.style.display = 'none';
-      el.style.display = 'flex';
-      list.forEach(t => el.appendChild(createCard(t)));
-    }
-
-    // stats
-    const doneCount = tasks.filter(t => t.done).length;
-    const total = tasks.length;
-    document.getElementById('stat-done').textContent = doneCount;
-    document.getElementById('stat-remaining').textContent = total - doneCount;
-    const pct = total ? Math.round(doneCount / total * 100) : 0;
-    document.getElementById('progress-fill').style.width = pct + '%';
+    const done = tasks.filter(t=>t.done).length, total = tasks.length;
+    document.getElementById('stat-done').textContent      = done;
+    document.getElementById('stat-remaining').textContent = total - done;
+    document.getElementById('progress-fill').style.width  = (total ? Math.round(done/total*100) : 0) + '%';
   }
 
-  function createCard(task) {
-    const card = document.createElement('div');
-    card.className = `task-card priority-${task.priority}${task.done ? ' done' : ''}`;
-    card.dataset.id = task.id;
+  function card(t) {
+    const el = document.createElement('div');
+    el.className = `task-card priority-${t.priority}${t.done?' done':''}`;
 
-    const check = document.createElement('div');
-    check.className = 'task-check';
-    check.setAttribute('role', 'checkbox');
-    check.setAttribute('aria-checked', task.done);
-    check.setAttribute('aria-label', task.done ? '完了済み' : '未完了');
-    check.addEventListener('click', () => toggleDone(task.id));
+    const chk = document.createElement('div');
+    chk.className = 'task-check';
+    chk.setAttribute('role','checkbox'); chk.setAttribute('aria-checked',t.done);
+    chk.addEventListener('click', () => { t.done=!t.done; save(); render(); pushLater(); });
 
-    const body = document.createElement('div');
-    body.className = 'task-body';
+    const body = document.createElement('div'); body.className='task-body';
+    const title = document.createElement('div'); title.className='task-title'; title.textContent=t.title;
+    const meta  = document.createElement('div'); meta.className='task-meta';
+    if (t.category) { const b=document.createElement('span'); b.className='badge badge-cat'; b.textContent=t.category; meta.appendChild(b); }
+    if (t.due) { const df=fmtDate(t.due); if(df){ const b=document.createElement('span'); b.className='badge badge-due'+(df.overdue?' overdue':''); b.textContent='📅 '+df.label; meta.appendChild(b); } }
+    body.appendChild(title); if(meta.children.length) body.appendChild(meta);
 
-    const title = document.createElement('div');
-    title.className = 'task-title';
-    title.textContent = task.title;
+    const acts = document.createElement('div'); acts.className='task-actions';
+    const eb = document.createElement('button'); eb.className='icon-btn'; eb.textContent='✏️'; eb.setAttribute('aria-label','編集');
+    eb.addEventListener('click', () => openEdit(t.id));
+    const db2 = document.createElement('button'); db2.className='icon-btn delete'; db2.textContent='🗑️'; db2.setAttribute('aria-label','削除');
+    db2.addEventListener('click', () => { tasks=tasks.filter(x=>x.id!==t.id); save(); render(); pushLater(); });
+    acts.append(eb, db2);
 
-    const meta = document.createElement('div');
-    meta.className = 'task-meta';
-
-    if (task.category) {
-      const cat = document.createElement('span');
-      cat.className = 'badge badge-cat';
-      cat.textContent = task.category;
-      meta.appendChild(cat);
-    }
-    if (task.due) {
-      const df = formatDate(task.due);
-      if (df) {
-        const due = document.createElement('span');
-        due.className = 'badge badge-due' + (df.overdue ? ' overdue' : '');
-        due.textContent = '📅 ' + df.label;
-        meta.appendChild(due);
-      }
-    }
-
-    body.appendChild(title);
-    if (meta.children.length) body.appendChild(meta);
-
-    const actions = document.createElement('div');
-    actions.className = 'task-actions';
-
-    const editBtn = document.createElement('button');
-    editBtn.className = 'icon-btn edit';
-    editBtn.textContent = '✏️';
-    editBtn.setAttribute('aria-label', '編集');
-    editBtn.addEventListener('click', () => openEdit(task.id));
-
-    const delBtn = document.createElement('button');
-    delBtn.className = 'icon-btn delete';
-    delBtn.textContent = '🗑️';
-    delBtn.setAttribute('aria-label', '削除');
-    delBtn.addEventListener('click', () => deleteTask(task.id));
-
-    actions.appendChild(editBtn);
-    actions.appendChild(delBtn);
-
-    card.appendChild(check);
-    card.appendChild(body);
-    card.appendChild(actions);
-    return card;
+    el.append(chk, body, acts);
+    return el;
   }
 
-  function toggleDone(id) {
-    const t = tasks.find(x => x.id === id);
-    if (t) { t.done = !t.done; save(); render(); }
-  }
-
-  function deleteTask(id) {
-    tasks = tasks.filter(x => x.id !== id);
-    save(); render();
-  }
-
-  // Modal
-  const overlay = document.getElementById('overlay');
-  const modalTitle = document.getElementById('modal-title');
-  const inputTitle = document.getElementById('input-title');
-  const inputNote = document.getElementById('input-note');
-  const inputCategory = document.getElementById('input-category');
-  const inputDue = document.getElementById('input-due');
-  const submitBtn = document.getElementById('submit-btn');
-  const priorityPills = document.querySelectorAll('.priority-pill');
+  // ── task modal ─────────────────────────────────────────────────
+  const taskOverlay = document.getElementById('task-overlay');
+  const pills = document.querySelectorAll('.priority-pill');
 
   function setPriority(p) {
     selectedPriority = p;
-    priorityPills.forEach(el => {
-      el.className = 'priority-pill';
-      if (el.dataset.priority === p) el.classList.add(`selected-${p}`);
-    });
+    pills.forEach(el => { el.className='priority-pill'; if(el.dataset.priority===p) el.classList.add(`selected-${p}`); });
   }
-
-  priorityPills.forEach(el => el.addEventListener('click', () => setPriority(el.dataset.priority)));
+  pills.forEach(el => el.addEventListener('click', ()=>setPriority(el.dataset.priority)));
 
   function openAdd() {
-    editingId = null;
-    modalTitle.textContent = 'タスクを追加';
-    submitBtn.textContent = '追加する';
-    inputTitle.value = '';
-    inputNote.value = '';
-    inputCategory.value = '';
-    inputDue.value = '';
+    editingId=null;
+    document.getElementById('modal-title').textContent='タスクを追加';
+    document.getElementById('submit-btn').textContent='追加する';
+    ['title','note','category','due'].forEach(k => document.getElementById('input-'+k).value='');
     setPriority('medium');
-    overlay.classList.add('open');
-    setTimeout(() => inputTitle.focus(), 200);
+    taskOverlay.classList.add('open');
+    setTimeout(()=>document.getElementById('input-title').focus(), 200);
   }
 
   function openEdit(id) {
-    const t = tasks.find(x => x.id === id);
-    if (!t) return;
-    editingId = id;
-    modalTitle.textContent = 'タスクを編集';
-    submitBtn.textContent = '保存する';
-    inputTitle.value = t.title;
-    inputNote.value = t.note || '';
-    inputCategory.value = t.category || '';
-    inputDue.value = t.due || '';
+    const t = tasks.find(x=>x.id===id); if(!t) return;
+    editingId=id;
+    document.getElementById('modal-title').textContent='タスクを編集';
+    document.getElementById('submit-btn').textContent='保存する';
+    document.getElementById('input-title').value    = t.title;
+    document.getElementById('input-note').value     = t.note||'';
+    document.getElementById('input-category').value = t.category||'';
+    document.getElementById('input-due').value      = t.due||'';
     setPriority(t.priority);
-    overlay.classList.add('open');
-    setTimeout(() => inputTitle.focus(), 200);
+    taskOverlay.classList.add('open');
+    setTimeout(()=>document.getElementById('input-title').focus(), 200);
   }
 
-  function closeModal() { overlay.classList.remove('open'); }
-
-  overlay.addEventListener('click', e => { if (e.target === overlay) closeModal(); });
-
+  taskOverlay.addEventListener('click', e=>{ if(e.target===taskOverlay) taskOverlay.classList.remove('open'); });
   document.getElementById('fab-btn').addEventListener('click', openAdd);
 
-  submitBtn.addEventListener('click', () => {
-    const title = inputTitle.value.trim();
-    if (!title) { inputTitle.focus(); inputTitle.style.borderColor = 'var(--danger)'; return; }
-    inputTitle.style.borderColor = '';
+  document.getElementById('submit-btn').addEventListener('click', ()=>{
+    const title = document.getElementById('input-title').value.trim();
+    const inp = document.getElementById('input-title');
+    if (!title) { inp.focus(); inp.style.borderColor='var(--danger)'; return; }
+    inp.style.borderColor='';
     if (editingId) {
-      const t = tasks.find(x => x.id === editingId);
-      if (t) {
-        t.title = title;
-        t.note = inputNote.value.trim();
-        t.category = inputCategory.value.trim();
-        t.due = inputDue.value;
-        t.priority = selectedPriority;
-      }
+      const t = tasks.find(x=>x.id===editingId);
+      if (t) { t.title=title; t.note=document.getElementById('input-note').value.trim(); t.category=document.getElementById('input-category').value.trim(); t.due=document.getElementById('input-due').value; t.priority=selectedPriority; }
     } else {
-      tasks.unshift({
-        id: uid(), title, note: inputNote.value.trim(),
-        category: inputCategory.value.trim(), due: inputDue.value,
-        priority: selectedPriority, done: false, createdAt: Date.now()
-      });
+      tasks.unshift({ id:uid(), title, note:document.getElementById('input-note').value.trim(), category:document.getElementById('input-category').value.trim(), due:document.getElementById('input-due').value, priority:selectedPriority, done:false, createdAt:Date.now() });
     }
-    save(); render(); closeModal();
+    save(); render(); taskOverlay.classList.remove('open'); pushLater();
   });
+  document.getElementById('input-title').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('submit-btn').click(); });
 
-  inputTitle.addEventListener('keydown', e => { if (e.key === 'Enter') submitBtn.click(); });
+  // ── sync modal ─────────────────────────────────────────────────
+  const syncOverlay = document.getElementById('sync-overlay');
 
-  // Filters
-  document.getElementById('filter-bar').addEventListener('click', e => {
-    const btn = e.target.closest('.filter-btn');
-    if (!btn) return;
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    currentFilter = btn.dataset.filter;
-    render();
-  });
-
-  document.getElementById('sort-select').addEventListener('change', e => {
-    currentSort = e.target.value;
-    render();
-  });
-
-  load();
-  render();
-
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js');
+  function showSection(name) {
+    ['setup','connected','howto'].forEach(s =>
+      document.getElementById('section-'+s).style.display = s===name ? 'block' : 'none'
+    );
   }
-})();
+  function updateCodeDisplay(code) {
+    document.getElementById('code-display').textContent = code;
+  }
+
+  document.getElementById('sync-btn').addEventListener('click', ()=>{
+    showSection(syncOn ? 'connected' : 'setup');
+    if (syncOn) updateCodeDisplay(syncCode);
+    syncOverlay.classList.add('open');
+  });
+  syncOverlay.addEventListener('click', e=>{ if(e.target===syncOverlay) syncOverlay.classList.remove('open'); });
+
+  document.getElementById('connect-btn').addEventListener('click', async ()=>{
+    const cfg = document.getElementById('input-fb-config').value.trim();
+    if (!cfg) return alert('Firebase設定を貼り付けてください');
+    const code = localStorage.getItem(CODE_KEY) || genCode();
+    const ok = await connect(cfg, code);
+    if (ok) {
+      localStorage.setItem(FB_KEY, cfg); localStorage.setItem(CODE_KEY, code);
+      showSection('connected'); updateCodeDisplay(code);
+    }
+  });
+
+  document.getElementById('join-btn').addEventListener('click', async ()=>{
+    const code = document.getElementById('input-join-code').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if (code.length < 4) return alert('同期コードを入力してください');
+    const formatted = code.length >= 8 ? code.slice(0,4)+'-'+code.slice(4,8) : code;
+    const cfg = localStorage.getItem(FB_KEY);
+    if (!cfg) return alert('先にFirebase設定を入力してください');
+    const ok = await connect(cfg, formatted);
+    if (ok) { localStorage.setItem(CODE_KEY, formatted); showSection('connected'); updateCodeDisplay(formatted); }
+  });
+
+  document.getElementById('copy-btn').addEventListener('click', async ()=>{
+    try {
+      await navigator.clipboard.writeText(syncCode);
+      const b = document.getElementById('copy-btn');
+      b.textContent='✓ コピー済み';
+      setTimeout(()=>{ b.textContent='コピー'; }, 2000);
+    } catch { alert('コード: '+syncCode); }
+  });
+
+  document.getElementById('disconnect-btn').addEventListener('click', ()=>{
+    if (confirm('同期を切断しますか？\nローカルのタスクは残ります。')) {
+      disconnect(); showSection('setup');
+    }
+  });
+
+  document.getElementById('howto-btn').addEventListener('click', ()=>showSection('howto'));
+  document.getElementById('back-btn').addEventListener('click',  ()=>showSection('setup'));
+
+  // ── sync code input: auto-format ───────────────────────────────
+  document.getElementById('input-join-code').addEventListener('input', function() {
+    let v = this.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+    if (v.length > 4) v = v.slice(0,4)+'-'+v.slice(4,8);
+    this.value = v;
+  });
+
+  // ── filter / sort ──────────────────────────────────────────────
+  document.getElementById('filter-bar').addEventListener('click', e=>{
+    const btn = e.target.closest('.filter-btn'); if(!btn) return;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active'); currentFilter=btn.dataset.filter; render();
+  });
+  document.getElementById('sort-select').addEventListener('change', e=>{ currentSort=e.target.value; render(); });
+
+  // ── init ───────────────────────────────────────────────────────
+  load(); render(); autoConnect();
+
+  if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js');
 </script>
 </body>
 </html>
